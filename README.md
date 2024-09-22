@@ -2,11 +2,11 @@ XSS dection model (LSTM & MLP)
 ===
 
 # Enviroment
-Systerm:	**Ubuntu 22.04.3 LTS**
-CPU:	**CPU E5-2680 V4 @2.40GHz**
+Systerm:	**Ubuntu 22.04.3 LTS**\
+CPU:	**CPU E5-2680 V4 @2.40GHz**\
 GPU:	**NVIDIA RTX A5000**
 
-Python module	Python 3.12.3
+Python module	Python 3.12.3\
 pytorch=2.4.1+cu121
 
 # Env setup
