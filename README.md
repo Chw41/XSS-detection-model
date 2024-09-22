@@ -32,7 +32,7 @@ root@chw:~# source chwenv/bin/activate
 ```
 vi LSTM.py
 ```
-LSTM.py
+[LSTM.py](https://github.com/Chw41/XSS-dection-model/blob/main/LSTM.py)
 ```python=
 import torch
 import torch.nn as nn
@@ -67,7 +67,7 @@ LSTMModel(
 ```
 vi MLP.py
 ```
-MLP.py
+[MLP.py](https://github.com/Chw41/XSS-dection-model/blob/main/MLP.py)
 ```python=
 import torch.nn as nn
 
