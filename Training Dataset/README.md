@@ -1,6 +1,6 @@
-# XSS-dection-model
-## Training Dataset
+# XSS-dection-model/ Training Dataset
 
+## Folders Tree
 ```
 .
 ├── README.md
