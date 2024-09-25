@@ -1,4 +1,4 @@
-XSS dection model (LSTM & MLP)
+XSS detection model (LSTM & MLP)
 ===
 
 # Enviroment
