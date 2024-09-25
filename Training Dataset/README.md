@@ -1,4 +1,4 @@
-# XSS-dection-model/ Training Dataset
+# XSS-detection-model/ Training Dataset
 
 ## Folders Tree
 ```
