@@ -63,12 +63,12 @@ LSTMModel(
 )
 ```
 
-ˋˋˋ
+```
 pip3 install tensorflow opencv-python
 pip3 install numpy pandas matplotlib keras opencv-python
 sudo apt-get install libgl1 libglx-mesa0 libglvnd0
 pip3 install --upgrade pandas numpy
-ˋˋˋ
+```
 Ref: https://github.com/harikrizz77/XSS-attack-detection-using-LSTM/blob/main/code.ipynb
 
 # Create MLP mode
