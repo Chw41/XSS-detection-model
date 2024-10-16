@@ -30,6 +30,13 @@ root@chw:~# source chwenv/bin/activate
 
 # Create LSTM model
 ```
+pip3 install numpy pandas matplotlib keras opencv-python
+pip3 install tensorflow opencv-python
+sudo apt-get install libgl1 libglx-mesa0 libglvnd0
+pip3 install --upgrade pandas numpy
+```
+
+```
 vi LSTM.py
 ```
 [LSTM.py](https://github.com/Chw41/XSS-dection-model/blob/main/LSTM.py)
