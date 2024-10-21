@@ -25,19 +25,21 @@ root@chw:~# source chwenv/bin/activate
 ```
 (chwenv) root@chw:~# pip3 install torch torchvision
 (chwenv) root@chw:~# python3 -c "import torch; print(torch.__version__)"
-2.4.1+cu121
+2.5.0+cu124
 ```
 
 # Create LSTM model
 ```
-pip3 install tensorflow opencv-python
-pip3 install numpy pandas matplotlib keras opencv-python
-sudo apt-get install libgl1 libglx-mesa0 libglvnd0
+pip install torch torchvision torchaudio
+pip install pandas
+pip install numpy
+pip install opencv-python
+pip install scikit-learn
+pip install matplotlib
 ```
 
-
 ```
-vi LSTM.py
+vi LSTM.ipynb
 ```
 [LSTM.ipynb](https://github.com/Chw41/XSS-dection-model/blob/main/LSTM.ipynb)
 ```python=
