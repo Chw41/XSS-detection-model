@@ -30,6 +30,13 @@ root@chw:~# source chwenv/bin/activate
 
 # Create LSTM model
 ```
+pip3 install tensorflow opencv-python
+pip3 install numpy pandas matplotlib keras opencv-python
+sudo apt-get install libgl1 libglx-mesa0 libglvnd0
+```
+
+
+```
 vi LSTM.py
 ```
 [LSTM.ipynb](https://github.com/Chw41/XSS-dection-model/blob/main/LSTM.ipynb)
@@ -63,11 +70,6 @@ LSTMModel(
 )
 ```
 
-```
-pip3 install tensorflow opencv-python
-pip3 install numpy pandas matplotlib keras opencv-python
-sudo apt-get install libgl1 libglx-mesa0 libglvnd0
-```
 Ref: https://github.com/harikrizz77/XSS-attack-detection-using-LSTM/blob/main/code.ipynb
 
 # Create MLP mode
