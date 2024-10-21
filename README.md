@@ -43,34 +43,12 @@ vi LSTM.ipynb
 ```
 [LSTM.ipynb](https://github.com/Chw41/XSS-dection-model/blob/main/LSTM.ipynb)
 ```python=
-import torch
-import torch.nn as nn
 
-class LSTMModel(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super(LSTMModel, self).__init__()
-        self.lstm = nn.LSTM(input_size, hidden_size, batch_first=True)
-        self.fc = nn.Linear(hidden_size, output_size)
-
-    def forward(self, x):
-        lstm_out, _ = self.lstm(x)
-        output = self.fc(lstm_out[:, -1, :])  # 只取最後一個時間步驟的輸出
-        return output
-
-input_size = 1
-hidden_size = 50
-output_size = 1
-model = LSTMModel(input_size, hidden_size, output_size)
-
-print(model)
 ```
-```
-(chwenv) root@fc8f6c1b3229:~# python3 LSTM.py
-LSTMModel(
-  (lstm): LSTM(1, 50, batch_first=True)
-  (fc): Linear(in_features=50, out_features=1, bias=True)
-)
-```
+![image](https://github.com/user-attachments/assets/946b2455-e38d-48a3-b0e8-aa88e6445995)
+
+![image](https://github.com/user-attachments/assets/068648a5-1475-45cf-83fe-d065841a415d)
+
 
 Ref: https://github.com/harikrizz77/XSS-attack-detection-using-LSTM/blob/main/code.ipynb
 
