@@ -24,7 +24,7 @@ root@chw:~# source chwenv/bin/activate
 ## - Install PyTorch & Check
 ```
 (chwenv) root@chw:~# pip3 install torch torchvision
-(chwenv) root@chw:~# python -c "import torch; print(torch.__version__)"
+(chwenv) root@chw:~# python3 -c "import torch; print(torch.__version__)"
 2.4.1+cu121
 ```
 
