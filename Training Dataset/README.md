@@ -5,6 +5,8 @@
 .
 ├── README.md
 │
+├──XSS_dataset.csv
+│
 ├── Normal/
 │   └── DeepXSS_nomal.csv (Ref: DeepXSS)
 │
