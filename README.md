@@ -1,4 +1,4 @@
-XSS detection model (LSTM & MLP)
+XSS detection model (CNN & LSTM & MLP)
 ===
 
 # Enviroment
@@ -28,7 +28,7 @@ root@chw:~# source chwenv/bin/activate
 2.5.0+cu124
 ```
 
-# Create LSTM model
+# Create CNN model
 ```
 pip install torch torchvision torchaudio
 pip install pandas
@@ -39,9 +39,9 @@ pip install matplotlib
 ```
 
 ```
-vi LSTM.ipynb
+vi CNN.ipynb
 ```
-[LSTM.ipynb](https://github.com/Chw41/XSS-dection-model/blob/main/LSTM.ipynb)
+[CNN.ipynb](https://github.com/Chw41/XSS-dection-model/blob/main/CNN.ipynb)
 ```python=
 # Import Libraries
 import numpy as np
