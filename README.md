@@ -185,6 +185,24 @@ print("Confusion Matrix: \n", confusion)
 
 ![image](https://github.com/user-attachments/assets/068648a5-1475-45cf-83fe-d065841a415d)
 
+```
+# Prepare Data
+顯示結果圖片 2,3 張
+
+dataset 分類
+train 7 verfy 2 test 1
+
+dataloader 最少要8 個 （補充）
+
+optimizer 需要有
+0.001, 0.002, 0.01, 0.02, 0.05
+
+計算 f1 score
+
+train loop 最少 20 次
+化成 loss 折線圖
+train losss test loss
+```
 
 Ref: https://github.com/harikrizz77/XSS-attack-detection-using-LSTM/blob/main/code.ipynb
 
