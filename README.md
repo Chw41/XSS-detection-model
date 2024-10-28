@@ -227,9 +227,6 @@ print("F1 Score: ", f1)
 print("Confusion Matrix: \n", confusion)
 
 ```
-![image](https://github.com/user-attachments/assets/946b2455-e38d-48a3-b0e8-aa88e6445995)
-
-![image](https://github.com/user-attachments/assets/068648a5-1475-45cf-83fe-d065841a415d)
 
 ```
 # Prepare Data
@@ -563,3 +560,7 @@ if __name__ == "__main__":
     demo_detector()
 ```
 Ref: https://github.com/antonmedv/fx
+
+![image](https://github.com/user-attachments/assets/49972077-1f8c-4d50-ab92-7de8f9089410)
+
+
