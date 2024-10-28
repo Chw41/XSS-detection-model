@@ -561,7 +561,7 @@ if __name__ == "__main__":
 ```
 Ref: https://github.com/antonmedv/fx
 
-![image](https://github.com/user-attachments/assets/49972077-1f8c-4d50-ab92-7de8f9089410)
+![image](https://github.com/user-attachments/assets/a8e32a1e-a35a-4b54-bc51-4db8164ca597)
 
-![image](https://github.com/user-attachments/assets/e5fd59e7-a4c6-47ef-8531-db2d599e4c5f)
+![image](https://github.com/user-attachments/assets/e55cfe09-9c1c-4ed2-a029-c5c6ae785cd8)
 
