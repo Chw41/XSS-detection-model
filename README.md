@@ -565,7 +565,7 @@ if __name__ == "__main__":
 
 # Create MLP mode
 ```
-pip install gensim==4.3.1
+pip3 install gensim nltk
 ```
 
 ```
