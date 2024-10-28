@@ -35,7 +35,7 @@ pip install pandas
 pip install numpy
 pip install opencv-python
 pip install scikit-learn
-pip install matplotlib
+pip install matplotlib==3.8.0
 ```
 
 ```
