@@ -321,6 +321,8 @@ Epoch [2/20], Training Loss: 46.2245, Verify Loss: 45.5618
 Epoch [3/20], Training Loss: 46.1937, Verify Loss: 45.5618
 
 ```
+![image](https://github.com/user-attachments/assets/71654f93-7b72-447e-95d1-9f73fa3a2ec4)
+
 
 Ref: https://github.com/harikrizz77/XSS-attack-detection-using-LSTM/blob/main/code.ipynb
 
