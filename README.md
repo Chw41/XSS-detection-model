@@ -328,7 +328,7 @@ Ref: https://github.com/harikrizz77/XSS-attack-detection-using-LSTM/blob/main/co
 ```
 vi LSTM.ipynb
 ```
-[MLP.py](https://github.com/Chw41/XSS-dection-model/blob/main/MLP.py)
+[LSTM.ipynb](https://github.com/Chw41/XSS-dection-model/blob/main/LSTM.ipynb)
 ```python=
 # Import necessary libraries
 import pandas as pd
@@ -559,9 +559,17 @@ def demo_detector():
 if __name__ == "__main__":
     demo_detector()
 ```
-Ref: https://github.com/antonmedv/fx
-
 ![image](https://github.com/user-attachments/assets/a8e32a1e-a35a-4b54-bc51-4db8164ca597)
 
 ![image](https://github.com/user-attachments/assets/e55cfe09-9c1c-4ed2-a029-c5c6ae785cd8)
 
+# Create MLP mode
+```
+vi MLP.ipynb
+```
+[MLP.ipynb](https://github.com/Chw41/XSS-dection-model/blob/main/MLP.ipynb)
+```python=
+
+```
+
+Ref: https://github.com/antonmedv/fx
