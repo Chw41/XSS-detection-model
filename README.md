@@ -565,6 +565,10 @@ if __name__ == "__main__":
 
 # Create MLP mode
 ```
+pip install gensim==4.3.1
+```
+
+```
 vi MLP.ipynb
 ```
 [MLP.ipynb](https://github.com/Chw41/XSS-dection-model/blob/main/MLP.ipynb)
