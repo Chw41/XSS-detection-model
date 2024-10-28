@@ -204,6 +204,81 @@ train loop 最少 20 次
 train losss test loss
 ```
 
+```
+
+Training with learning rate: 0.001
+Epoch [1/20], Training Loss: 0.4829, Verify Loss: 0.4641
+Epoch [2/20], Training Loss: 0.3413, Verify Loss: 0.3003
+Epoch [3/20], Training Loss: 0.1386, Verify Loss: 0.0985
+Epoch [4/20], Training Loss: 0.0929, Verify Loss: 0.0886
+Epoch [5/20], Training Loss: 0.0709, Verify Loss: 0.0990
+Epoch [6/20], Training Loss: 0.0662, Verify Loss: 0.0760
+Epoch [7/20], Training Loss: 0.0615, Verify Loss: 0.0684
+Epoch [8/20], Training Loss: 0.0559, Verify Loss: 0.0629
+Epoch [9/20], Training Loss: 0.0465, Verify Loss: 0.0587
+Epoch [10/20], Training Loss: 0.0437, Verify Loss: 0.0663
+Epoch [11/20], Training Loss: 0.0388, Verify Loss: 0.0564
+Epoch [12/20], Training Loss: 0.0382, Verify Loss: 0.0543
+Epoch [13/20], Training Loss: 0.0327, Verify Loss: 0.0529
+Epoch [14/20], Training Loss: 0.0310, Verify Loss: 0.0435
+Epoch [15/20], Training Loss: 0.0324, Verify Loss: 0.0414
+Epoch [16/20], Training Loss: 0.0252, Verify Loss: 0.0371
+Epoch [17/20], Training Loss: 0.0222, Verify Loss: 0.0484
+Epoch [18/20], Training Loss: 0.0206, Verify Loss: 0.0323
+Epoch [19/20], Training Loss: 0.0219, Verify Loss: 0.0583
+Epoch [20/20], Training Loss: 0.0169, Verify Loss: 0.0313
+
+Training with learning rate: 0.002
+Epoch [1/20], Training Loss: 0.4896, Verify Loss: 0.3761
+Epoch [2/20], Training Loss: 0.2332, Verify Loss: 0.1071
+Epoch [3/20], Training Loss: 0.0995, Verify Loss: 0.1006
+Epoch [4/20], Training Loss: 0.0790, Verify Loss: 0.0783
+Epoch [5/20], Training Loss: 0.0687, Verify Loss: 0.0890
+Epoch [6/20], Training Loss: 0.0641, Verify Loss: 0.0725
+Epoch [7/20], Training Loss: 0.0574, Verify Loss: 0.0666
+Epoch [8/20], Training Loss: 0.0574, Verify Loss: 0.0560
+Epoch [9/20], Training Loss: 0.0494, Verify Loss: 0.0648
+Epoch [10/20], Training Loss: 0.0395, Verify Loss: 0.0557
+Epoch [11/20], Training Loss: 0.0349, Verify Loss: 0.0525
+Epoch [12/20], Training Loss: 0.0367, Verify Loss: 0.0635
+Epoch [13/20], Training Loss: 0.0294, Verify Loss: 0.0557
+Epoch [14/20], Training Loss: 0.0286, Verify Loss: 0.0550
+Epoch [15/20], Training Loss: 0.0268, Verify Loss: 0.0384
+Epoch [16/20], Training Loss: 0.0326, Verify Loss: 0.0719
+Epoch [17/20], Training Loss: 0.0227, Verify Loss: 0.0567
+Epoch [18/20], Training Loss: 0.0206, Verify Loss: 0.0482
+Epoch [19/20], Training Loss: 0.0172, Verify Loss: 0.0389
+Epoch [20/20], Training Loss: 0.0134, Verify Loss: 0.0624
+
+Training with learning rate: 0.01
+Epoch [1/20], Training Loss: 53.1779, Verify Loss: 54.4382
+Epoch [2/20], Training Loss: 53.7909, Verify Loss: 54.4382
+Epoch [3/20], Training Loss: 53.7967, Verify Loss: 54.4382
+Epoch [4/20], Training Loss: 53.7870, Verify Loss: 54.4382
+Epoch [5/20], Training Loss: 53.7755, Verify Loss: 54.4382
+Epoch [6/20], Training Loss: 53.7890, Verify Loss: 54.4382
+Epoch [7/20], Training Loss: 53.7870, Verify Loss: 54.4382
+Epoch [8/20], Training Loss: 53.7909, Verify Loss: 54.4382
+Epoch [9/20], Training Loss: 53.7967, Verify Loss: 54.4382
+Epoch [10/20], Training Loss: 53.7909, Verify Loss: 54.4382
+Epoch [11/20], Training Loss: 53.7928, Verify Loss: 54.4382
+Epoch [12/20], Training Loss: 53.8005, Verify Loss: 54.4382
+Epoch [13/20], Training Loss: 53.7812, Verify Loss: 54.4382
+Epoch [14/20], Training Loss: 53.7870, Verify Loss: 54.4382
+Epoch [15/20], Training Loss: 53.7909, Verify Loss: 54.4382
+Epoch [16/20], Training Loss: 53.8005, Verify Loss: 54.4382
+Epoch [17/20], Training Loss: 53.7793, Verify Loss: 54.4382
+Epoch [18/20], Training Loss: 53.8005, Verify Loss: 54.4382
+Epoch [19/20], Training Loss: 53.7948, Verify Loss: 54.4382
+Epoch [20/20], Training Loss: 53.7832, Verify Loss: 54.4382
+
+Training with learning rate: 0.02
+Epoch [1/20], Training Loss: 45.6042, Verify Loss: 45.5618
+Epoch [2/20], Training Loss: 46.2245, Verify Loss: 45.5618
+Epoch [3/20], Training Loss: 46.1937, Verify Loss: 45.5618
+
+```
+
 Ref: https://github.com/harikrizz77/XSS-attack-detection-using-LSTM/blob/main/code.ipynb
 
 # Create MLP mode
