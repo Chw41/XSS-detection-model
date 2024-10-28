@@ -572,4 +572,4 @@ vi MLP.ipynb
 
 ```
 
-Ref: https://github.com/antonmedv/fx
+Ref: https://github.com/antonmedv/fx](https://github.com/obarrera/ML-XSS-Detection/blob/main/XSS-Doc2Vec-ML-Classifier.ipynb
