@@ -326,7 +326,7 @@ Epoch [3/20], Training Loss: 46.1937, Verify Loss: 45.5618
 
 Ref: https://github.com/harikrizz77/XSS-attack-detection-using-LSTM/blob/main/code.ipynb
 
-# Create LSTM mode
+# Create LSTM model
 ```
 vi LSTM.ipynb
 ```
