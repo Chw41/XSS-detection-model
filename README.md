@@ -340,7 +340,16 @@ from torch.utils.data import Dataset, DataLoader
 from collections import Counter
 import re
 from typing import List, Tuple
-
+from sklearn.metrics import f1_score
+# Import necessary libraries
+import pandas as pd
+import torch
+import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
+from collections import Counter
+import re
+from typing import List, Tuple
+from sklearn.metrics import f1_score
 # Preprocessing class for handling text data
 class TextPreprocessor:
     def __init__(self, max_len: int = 100):
@@ -379,21 +388,23 @@ class TextPreprocessor:
             tokens.extend(['<PAD>'] * (self.max_len - len(tokens)))
         
         return [self.vocab.get(token, self.vocab['<UNK>']) for token in tokens]
-
 # Custom Dataset class for XSS data
 class XSSDataset(Dataset):
     def __init__(self, texts: List[str], labels: List[int], preprocessor: TextPreprocessor):
         self.preprocessor = preprocessor
         self.encodings = [self.preprocessor.encode_text(text) for text in texts]
         self.labels = labels
+        self.has_printed = False
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, idx) -> Tuple[torch.Tensor, torch.Tensor]:
+        if idx < 3 and not self.has_printed:
+            print(f"Preprocessed input {idx}: {self.encodings[idx]}")
+            self.has_printed = True
         return (torch.tensor(self.encodings[idx], dtype=torch.long),
                 torch.tensor(self.labels[idx], dtype=torch.float))
-
 # LSTM model class for XSS detection
 class XSSDetectorLSTM(nn.Module):
     def __init__(self, vocab_size: int, embedding_dim: int = 50, 
@@ -423,7 +434,6 @@ class XSSDetectorLSTM(nn.Module):
         out = torch.relu(self.fc1(out))
         out = torch.sigmoid(self.fc2(out))
         return out
-
 # Detector class to handle training and prediction
 class XSSDetector:
     def __init__(self, max_len: int = 100, device: str = None):
@@ -435,96 +445,108 @@ class XSSDetector:
         self.max_len = max_len
         self.preprocessor = TextPreprocessor(max_len)
         self.model = None
+        self.training_losses = []
+        self.validation_losses = []
     
     def train(self, texts: List[str], labels: List[int], 
-              epochs: int = 10, batch_size: int = 32, learning_rate: float = 0.001,
+              epochs: int = 20, batch_size: int = 32, learning_rates: List[float] = [0.001, 0.002, 0.01, 0.02, 0.05],
               val_split: float = 0.1):
         
-        # Build vocabulary
+        # Build vocabulary and create dataset as before...
         self.preprocessor.build_vocab(texts)
-        
-        # Create dataset
         dataset = XSSDataset(texts, labels, self.preprocessor)
         
-        # Split into training and validation sets
-        val_size = int(len(dataset) * val_split)
-        train_size = len(dataset) - val_size
-        train_dataset, val_dataset = torch.utils.data.random_split(
-            dataset, [train_size, val_size]
+        # Split dataset and create loaders...
+        val_size = int(len(dataset) * 0.2)
+        test_size = int(len(dataset) * 0.1)
+        train_size = len(dataset) - val_size - test_size
+
+        train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(
+            dataset, [train_size, val_size, test_size]
         )
-        
+
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=batch_size)
+        test_loader = DataLoader(test_dataset, batch_size=batch_size)
         
-        # Initialize model
+        # Initialize model...
         self.model = XSSDetectorLSTM(
             vocab_size=self.preprocessor.vocab_size,
             embedding_dim=50
         ).to(self.device)
         
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
-        criterion = nn.BCELoss()
-        
-        # Training loop
-        for epoch in range(epochs):
-            self.model.train()
-            total_loss = 0
-            correct = 0
-            total = 0
+        for lr in learning_rates:
+            print(f"Training with learning rate: {lr}")
+
+            optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
+            criterion = nn.BCELoss()
             
-            for batch_sequences, batch_labels in train_loader:
-                batch_sequences = batch_sequences.to(self.device)
-                batch_labels = batch_labels.to(self.device)
-                
-                optimizer.zero_grad()
-                outputs = self.model(batch_sequences).squeeze()
-                loss = criterion(outputs, batch_labels)
-                loss.backward()
-                optimizer.step()
-                
-                total_loss += loss.item()
-                
-                # Calculate accuracy
-                predictions = (outputs >= 0.5).float()
-                correct += (predictions == batch_labels).sum().item()
-                total += len(batch_labels)
+            # Lists to store losses
+            self.training_losses = []
+            self.validation_losses = []
             
-            # Validation
-            self.model.eval()
-            val_loss = 0
-            val_correct = 0
-            val_total = 0
-            
-            with torch.no_grad():
-                for batch_sequences, batch_labels in val_loader:
+            # Training loop
+            for epoch in range(epochs):
+                self.model.train()
+                total_loss = 0
+                correct = 0
+                total = 0
+                
+                for batch_sequences, batch_labels in train_loader:
                     batch_sequences = batch_sequences.to(self.device)
                     batch_labels = batch_labels.to(self.device)
                     
+                    optimizer.zero_grad()
                     outputs = self.model(batch_sequences).squeeze()
-                    val_loss += criterion(outputs, batch_labels).item()
+                    loss = criterion(outputs, batch_labels)
+                    loss.backward()
+                    optimizer.step()
+                    
+                    total_loss += loss.item()
                     
                     predictions = (outputs >= 0.5).float()
-                    val_correct += (predictions == batch_labels).sum().item()
-                    val_total += len(batch_labels)
-            
-            print(f'Epoch {epoch+1}/{epochs}:')
-            print(f'Training Loss: {total_loss/len(train_loader):.4f}')
-            print(f'Training Accuracy: {100*correct/total:.2f}%')
-            print(f'Validation Loss: {val_loss/len(val_loader):.4f}')
-            print(f'Validation Accuracy: {100*val_correct/val_total:.2f}%\n')
-    
-    def predict(self, text: str) -> float:
-        if self.model is None:
-            raise ValueError("Model needs to be trained first")
-        
-        self.model.eval()
-        sequence = self.preprocessor.encode_text(text)
-        sequence_tensor = torch.tensor([sequence], dtype=torch.long).to(self.device)
-        
-        with torch.no_grad():
-            output = self.model(sequence_tensor)
-            return output.item()
+                    correct += (predictions == batch_labels).sum().item()
+                    total += len(batch_labels)
+                
+                # Calculate average training loss for this epoch
+                avg_train_loss = total_loss / len(train_loader)
+                self.training_losses.append(avg_train_loss)
+                
+                # Validation
+                self.model.eval()
+                val_loss = 0
+                val_correct = 0
+                val_total = 0
+                val_predictions = []
+                val_true_labels = []
 
+                with torch.no_grad():
+                    for batch_sequences, batch_labels in val_loader:
+                        batch_sequences = batch_sequences.to(self.device)
+                        batch_labels = batch_labels.to(self.device)
+                        
+                        outputs = self.model(batch_sequences).squeeze()
+                        val_loss += criterion(outputs, batch_labels).item()
+                        
+                        predictions = (outputs >= 0.5).float()
+                        val_correct += (predictions == batch_labels).sum().item()
+                        val_total += len(batch_labels)
+
+                        val_predictions.extend(predictions.cpu().numpy())
+                        val_true_labels.extend(batch_labels.cpu().numpy())
+
+                # Calculate average validation loss for this epoch
+                avg_val_loss = val_loss / len(val_loader)
+                self.validation_losses.append(avg_val_loss)
+
+                val_f1 = f1_score(val_true_labels, val_predictions)
+
+                print(f'Epoch {epoch+1}/{epochs}:')
+                print(f'Training Loss: {avg_train_loss:.4f}')
+                print(f'Training Accuracy: {100*correct/total:.2f}%')
+                print(f'Validation Loss: {avg_val_loss:.4f}')
+                print(f'Validation Accuracy: {100*val_correct/val_total:.2f}%')
+                print(f'Validation F1 Score: {val_f1:.4f}')
 # Function to demonstrate the detector with example inputs
 def demo_detector():
     # Load dataset
@@ -541,9 +563,22 @@ def demo_detector():
         labels=labels,
         epochs=20,
         batch_size=32,
-        learning_rate=0.001
+        learning_rates=[0.001, 0.002, 0.01, 0.02, 0.05]
     )
-    
+
+    # Plot training and validation losses
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, len(detector.training_losses) + 1), detector.training_losses, label='Training Loss')
+    plt.plot(range(1, len(detector.validation_losses) + 1), detector.validation_losses, label='Validation Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss Over Time')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
     # Test with some example cases
     test_cases = [
         "<script>alert(1)</script>",
@@ -556,7 +591,6 @@ def demo_detector():
     for test_input in test_cases:
         risk_score = detector.predict(test_input)
         print(f"Risk score for '{test_input}': {risk_score:.3f}")
-
 # Run demonstration
 if __name__ == "__main__":
     demo_detector()
