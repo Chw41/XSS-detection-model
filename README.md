@@ -160,13 +160,15 @@ all_loss_train = []
 all_loss_verify = []
 
 for lr in learning_rates:
-    print(f"\nTraining with learning rate: {lr}")
-    model = CNNModel()
-    criterion = nn.BCELoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    print(f"Training with learning rate: {lr}")
 
-    loss_train = []
-    loss_verify = []
+    optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
+    criterion = nn.BCELoss()
+
+    # Lists to store losses
+    self.training_losses = []
+    self.validation_losses = []
+            
 
     for epoch in range(num_epochs):
         model.train()
