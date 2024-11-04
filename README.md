@@ -198,13 +198,14 @@ for lr in learning_rates:
     all_loss_verify.append(loss_verify)
 
 # Plot training and verify loss for each learning rate
-for i, lr in enumerate(learning_rates):
-    plt.plot(all_loss_train[i], label=f'Train Loss (lr={lr})')
-    plt.plot(all_loss_verify[i], label=f'Verify Loss (lr={lr})')
+plt.figure(figsize=(10, 6))
+    plt.plot(range(1, len(self.training_losses) + 1), self.training_losses, label='Training Loss')
+    plt.plot(range(1, len(self.validation_losses) + 1), self.validation_losses, label='Validation Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
+    plt.title(f'Training and Validation Loss Over Time (Learning Rate: {lr})')
     plt.legend()
-    plt.title(f'Loss Curves for learning rate = {lr}')
+    plt.grid(True)
     plt.show()
 
 # Prediction on test data
