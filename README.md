@@ -344,74 +344,93 @@ from collections import Counter
 import re
 from typing import List, Tuple
 from sklearn.metrics import f1_score
-# Import necessary libraries
-import pandas as pd
-import torch
-import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
-from collections import Counter
-import re
-from typing import List, Tuple
-from sklearn.metrics import f1_score
-# Preprocessing class for handling text data
+import matplotlib.pyplot as plt
+import os
+
 class TextPreprocessor:
     def __init__(self, max_len: int = 100):
         self.max_len = max_len
-        self.vocab = {'<PAD>': 0, '<UNK>': 1}  # Initial vocabulary with padding and unknown tokens
+        self.vocab = {'<PAD>': 0, '<UNK>': 1}
         self.vocab_size = 2
     
     def tokenize(self, text: str) -> List[str]:
-        """Tokenize HTML text into meaningful components."""
-        # Separate HTML tags and attributes
+        # Convert input to string and clean it
+        text = str(text)
         text = re.sub(r'([<>/="])', r' \1 ', text)
-        # Remove extra whitespace
         text = ' '.join(text.split())
         return text.lower().split()
     
     def build_vocab(self, texts: List[str], min_freq: int = 2):
-        """Build vocabulary with common tokens"""
         counter = Counter()
         for text in texts:
+            # Ensure text is string
+            text = str(text)
             tokens = self.tokenize(text)
             counter.update(tokens)
         
-        # Add words meeting the minimum frequency threshold
         for word, freq in counter.items():
             if freq >= min_freq and word not in self.vocab:
                 self.vocab[word] = self.vocab_size
                 self.vocab_size += 1
     
     def encode_text(self, text: str) -> List[int]:
-        """Convert text to integer sequence"""
+        # Ensure text is string
+        text = str(text)
         tokens = self.tokenize(text)
-        # Truncate or pad to specified length
         if len(tokens) > self.max_len:
             tokens = tokens[:self.max_len]
         else:
             tokens.extend(['<PAD>'] * (self.max_len - len(tokens)))
-        
         return [self.vocab.get(token, self.vocab['<UNK>']) for token in tokens]
-# Custom Dataset class for XSS data
+
+
 class XSSDataset(Dataset):
     def __init__(self, texts: List[str], labels: List[int], preprocessor: TextPreprocessor):
+        # Convert all texts to strings
+        self.texts = [str(text) for text in texts]
         self.preprocessor = preprocessor
-        self.encodings = [self.preprocessor.encode_text(text) for text in texts]
-        self.labels = labels
-        self.has_printed = False
+        self.encodings = [self.preprocessor.encode_text(text) for text in self.texts]
+        self.labels = [int(label) for label in labels]  # Convert labels to int
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, idx) -> Tuple[torch.Tensor, torch.Tensor]:
-        if idx < 3 and not self.has_printed:
-            print(f"Preprocessed input {idx}: {self.encodings[idx]}")
-            self.has_printed = True
         return (torch.tensor(self.encodings[idx], dtype=torch.long),
                 torch.tensor(self.labels[idx], dtype=torch.float))
-# LSTM model class for XSS detection
+
+def load_and_clean_data(file_path: str) -> Tuple[List[str], List[int]]:
+    """Load and clean the dataset, ensuring proper data types."""
+    try:
+        # Read the CSV file
+        data = pd.read_csv(file_path)
+        
+        # Convert texts to strings and clean them
+        texts = [str(text).strip() for text in data['Sentence']]
+        
+        # Convert labels to integers
+        labels = [int(label) for label in data['Label']]
+        
+        # Basic validation
+        assert len(texts) == len(labels), "Number of texts and labels must match"
+        assert all(isinstance(text, str) for text in texts), "All texts must be strings"
+        assert all(isinstance(label, int) and label in [0, 1] for label in labels), "Labels must be binary (0 or 1)"
+        
+        print(f"Loaded {len(texts)} samples successfully")
+        
+        # Print some basic statistics
+        print(f"Number of positive samples: {sum(labels)}")
+        print(f"Number of negative samples: {len(labels) - sum(labels)}")
+        
+        return texts, labels
+    
+    except Exception as e:
+        print(f"Error loading data: {str(e)}")
+        raise
+
 class XSSDetectorLSTM(nn.Module):
     def __init__(self, vocab_size: int, embedding_dim: int = 50, 
-                 hidden_dim: int = 64, num_layers: int = 2, dropout: float = 0.2):
+                 hidden_dim: int = 64, num_layers: int = 2, dropout: float = 0.3):
         super().__init__()
         
         self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
@@ -430,172 +449,265 @@ class XSSDetectorLSTM(nn.Module):
     def forward(self, x):
         embedded = self.embedding(x)
         lstm_out, (hidden, _) = self.lstm(embedded)
-        
-        # Use the last time step's hidden state
         hidden = torch.cat((hidden[-2,:,:], hidden[-1,:,:]), dim=1)
         out = self.dropout(hidden)
         out = torch.relu(self.fc1(out))
         out = torch.sigmoid(self.fc2(out))
         return out
-# Detector class to handle training and prediction
+
 class XSSDetector:
     def __init__(self, max_len: int = 100, device: str = None):
-        if device is None:
-            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        else:
-            self.device = torch.device(device)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') if device is None else torch.device(device)
+        print(f"Using device: {self.device}")
         
         self.max_len = max_len
         self.preprocessor = TextPreprocessor(max_len)
         self.model = None
-        self.training_losses = []
-        self.validation_losses = []
+        self.results = {}
     
     def train(self, texts: List[str], labels: List[int], 
-              epochs: int = 20, batch_size: int = 32, learning_rates: List[float] = [0.001, 0.002, 0.01, 0.02, 0.05],
-              val_split: float = 0.1):
+              epochs: int = 20, batch_size: int = 16,  
+              learning_rates: List[float] = [0.001, 0.002, 0.01, 0.02, 0.05]):
         
-        # Build vocabulary and create dataset as before...
-        self.preprocessor.build_vocab(texts)
-        dataset = XSSDataset(texts, labels, self.preprocessor)
-        
-        # Split dataset and create loaders...
-        val_size = int(len(dataset) * 0.2)
-        test_size = int(len(dataset) * 0.1)
-        train_size = len(dataset) - val_size - test_size
-
-        train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(
-            dataset, [train_size, val_size, test_size]
-        )
-
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        val_loader = DataLoader(val_dataset, batch_size=batch_size)
-        test_loader = DataLoader(test_dataset, batch_size=batch_size)
-        
-        # Initialize model...
-        self.model = XSSDetectorLSTM(
-            vocab_size=self.preprocessor.vocab_size,
-            embedding_dim=50
-        ).to(self.device)
-        
-        for lr in learning_rates:
-            print(f"Training with learning rate: {lr}")
-
-            optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
-            criterion = nn.BCELoss()
+        try:
+            texts = [str(text) for text in texts]
+            labels = torch.tensor(labels, dtype=torch.float)
             
-            # Lists to store losses
-            self.training_losses = []
-            self.validation_losses = []
+            self.preprocessor.build_vocab(texts)
+            dataset = XSSDataset(texts, labels.numpy(), self.preprocessor)
             
-            # Training loop
-            for epoch in range(epochs):
-                self.model.train()
-                total_loss = 0
-                correct = 0
-                total = 0
+            # Split dataset
+            train_size = int(0.7 * len(dataset))
+            val_size = int(0.2 * len(dataset))
+            test_size = len(dataset) - train_size - val_size
+            
+            train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(
+                dataset, [train_size, val_size, test_size]
+            )
+            
+            print(f"\nDataset splits:")
+            print(f"Training: {train_size} samples")
+            print(f"Validation: {val_size} samples")
+            print(f"Test: {test_size} samples")
+            
+            train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+            val_loader = DataLoader(val_dataset, batch_size=batch_size)
+            
+            # Train with different learning rates
+            for lr in learning_rates:
+                print(f"\nTraining with learning rate: {lr}")
                 
-                for batch_sequences, batch_labels in train_loader:
-                    batch_sequences = batch_sequences.to(self.device)
-                    batch_labels = batch_labels.to(self.device)
-                    
-                    optimizer.zero_grad()
-                    outputs = self.model(batch_sequences).squeeze()
-                    loss = criterion(outputs, batch_labels)
-                    loss.backward()
-                    optimizer.step()
-                    
-                    total_loss += loss.item()
-                    
-                    predictions = (outputs >= 0.5).float()
-                    correct += (predictions == batch_labels).sum().item()
-                    total += len(batch_labels)
+                self.model = XSSDetectorLSTM(
+                    vocab_size=self.preprocessor.vocab_size,
+                    embedding_dim=50,
+                    dropout=0.3  # Increased dropout for regularization
+                ).to(self.device)
                 
-                # Calculate average training loss for this epoch
-                avg_train_loss = total_loss / len(train_loader)
-                self.training_losses.append(avg_train_loss)
+                optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=1e-5)
+                criterion = nn.BCELoss()
                 
-                # Validation
-                self.model.eval()
-                val_loss = 0
-                val_correct = 0
-                val_total = 0
-                val_predictions = []
-                val_true_labels = []
-
-                with torch.no_grad():
-                    for batch_sequences, batch_labels in val_loader:
+                # Learning rate scheduler for better convergence
+                scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                    optimizer, mode='min', factor=0.5, patience=3, verbose=True
+                )
+                
+                train_losses = []
+                val_losses = []
+                
+                best_val_loss = float('inf')
+                patience_counter = 0
+                
+                for epoch in range(epochs):
+                    # Training
+                    self.model.train()
+                    total_loss = 0
+                    train_correct = 0
+                    train_total = 0
+                    
+                    for batch_sequences, batch_labels in train_loader:
                         batch_sequences = batch_sequences.to(self.device)
                         batch_labels = batch_labels.to(self.device)
                         
+                        optimizer.zero_grad()
                         outputs = self.model(batch_sequences).squeeze()
-                        val_loss += criterion(outputs, batch_labels).item()
+                        loss = criterion(outputs, batch_labels)
+                        loss.backward()
+                        optimizer.step()
                         
+                        total_loss += loss.item()
                         predictions = (outputs >= 0.5).float()
-                        val_correct += (predictions == batch_labels).sum().item()
-                        val_total += len(batch_labels)
-
-                        val_predictions.extend(predictions.cpu().numpy())
-                        val_true_labels.extend(batch_labels.cpu().numpy())
-
-                # Calculate average validation loss for this epoch
-                avg_val_loss = val_loss / len(val_loader)
-                self.validation_losses.append(avg_val_loss)
-
+                        train_correct += (predictions == batch_labels).sum().item()
+                        train_total += len(batch_labels)
+                    
+                    avg_train_loss = total_loss / len(train_loader)
+                    train_losses.append(avg_train_loss)
+                    
+                    # Validation
+                    self.model.eval()
+                    val_loss = 0
+                    val_correct = 0
+                    val_total = 0
+                    val_predictions = []
+                    val_true_labels = []
+                    
+                    with torch.no_grad():
+                        for batch_sequences, batch_labels in val_loader:
+                            batch_sequences = batch_sequences.to(self.device)
+                            batch_labels = batch_labels.to(self.device)
+                            
+                            outputs = self.model(batch_sequences).squeeze()
+                            batch_val_loss = criterion(outputs, batch_labels).item()
+                            val_loss += batch_val_loss
+                            
+                            predictions = (outputs >= 0.5).float()
+                            val_correct += (predictions == batch_labels).sum().item()
+                            val_total += len(batch_labels)
+                            
+                            val_predictions.extend(predictions.cpu().numpy())
+                            val_true_labels.extend(batch_labels.cpu().numpy())
+                    
+                    avg_val_loss = val_loss / len(val_loader)
+                    val_losses.append(avg_val_loss)
+                    
+                    # Learning rate scheduler step
+                    scheduler.step(avg_val_loss)
+                    
+                    # Early stopping
+                    if avg_val_loss < best_val_loss:
+                        best_val_loss = avg_val_loss
+                        patience_counter = 0
+                        # Save the best model
+                        torch.save({
+                            'model_state_dict': self.model.state_dict(),
+                            'preprocessor': self.preprocessor
+                        }, f'best_model_lr_{lr}.pth')
+                    else:
+                        patience_counter += 1
+                    
+                    if patience_counter > 5:
+                        print("Early stopping triggered")
+                        break
+                    
+                    if (epoch + 1) % 5 == 0:
+                        print(f'Epoch {epoch+1}/{epochs}:')
+                        print(f'Training Loss: {avg_train_loss:.4f}')
+                        print(f'Training Accuracy: {100*train_correct/train_total:.2f}%')
+                        print(f'Validation Loss: {avg_val_loss:.4f}')
+                        print(f'Validation Accuracy: {100*val_correct/val_total:.2f}%')
+                
+                # Final evaluation
                 val_f1 = f1_score(val_true_labels, val_predictions)
-
-                print(f'Epoch {epoch+1}/{epochs}:')
-                print(f'Training Loss: {avg_train_loss:.4f}')
-                print(f'Training Accuracy: {100*correct/total:.2f}%')
-                print(f'Validation Loss: {avg_val_loss:.4f}')
-                print(f'Validation Accuracy: {100*val_correct/val_total:.2f}%')
-                print(f'Validation F1 Score: {val_f1:.4f}')
-# Function to demonstrate the detector with example inputs
-def demo_detector():
-    # Load dataset
-    data = pd.read_csv('dataset/XSS_dataset.csv')
-    texts = data['Sentence'].tolist()
-    labels = data['Label'].tolist()
+                
+                # Store results
+                self.results[lr] = {
+                    'train_losses': train_losses,
+                    'val_losses': val_losses,
+                    'final_train_loss': avg_train_loss,
+                    'final_val_loss': avg_val_loss,
+                    'train_accuracy': 100 * train_correct / train_total,
+                    'val_accuracy': 100 * val_correct / val_total,
+                    'f1_score': val_f1
+                }
+                
+                # Plot training curves with consistent scaling
+                plt.figure(figsize=(10, 6))
+                plt.plot(range(1, len(train_losses) + 1), train_losses, label='Training Loss')
+                plt.plot(range(1, len(val_losses) + 1), val_losses, label='Validation Loss')
+                plt.xlabel('Epoch')
+                plt.ylabel('Loss')
+                plt.title(f'Training and Validation Loss (Learning Rate: {lr})')
+                plt.ylim(0, 1)  # Consistent y-axis
+                plt.legend()
+                plt.grid(True)
+                plt.tight_layout()
+                plt.savefig(f'loss_plot_lr_{lr}.png')
+                plt.close()
+            
+            # Print final results
+            print("\nFinal Results for All Learning Rates:")
+            print("\nLR      Train Loss  Val Loss    Train Acc   Val Acc    F1 Score")
+            print("-" * 65)
+            for lr in learning_rates:
+                r = self.results[lr]
+                print(f"{lr:.3f}  {r['final_train_loss']:.4f}     {r['final_val_loss']:.4f}     "
+                      f"{r['train_accuracy']:.2f}%     {r['val_accuracy']:.2f}%     {r['f1_score']:.4f}")
+        
+        except Exception as e:
+            print(f"Training error: {e}")
     
-    # Initialize detector
-    detector = XSSDetector(max_len=100)
+    def predict(self, texts: List[str], model_path: str):
+        """
+        Load a saved model and predict on new texts
+        
+        Args:
+            texts (List[str]): Input texts to predict
+            model_path (str): Path to saved model checkpoint
+        
+        Returns:
+            List[int]: Predictions (0 or 1)
+        """
+        # Load the saved model and preprocessor
+        checkpoint = torch.load(model_path)
+        saved_preprocessor = checkpoint['preprocessor']
+        
+        # Ensure texts are processed the same way
+        encoded_texts = [saved_preprocessor.encode_text(str(text)) for text in texts]
+        
+        # Prepare model
+        model = XSSDetectorLSTM(
+            vocab_size=saved_preprocessor.vocab_size,
+            embedding_dim=50
+        )
+        model.load_state_dict(checkpoint['model_state_dict'])
+        model.eval()
+        
+        # Predict
+        with torch.no_grad():
+            text_tensors = torch.tensor(encoded_texts, dtype=torch.long)
+            outputs = model(text_tensors).squeeze()
+            predictions = (outputs >= 0.5).int().numpy()
+        
+        return predictions.tolist()
+
+
+# Pre-execution environment check
+def check_environment():
+    print("\n--- Environment Check ---")
+    print(f"PyTorch version: {torch.__version__}")
+    print(f"CUDA available: {torch.cuda.is_available()}")
+    print(f"CUDA device count: {torch.cuda.device_count()}")
+    try:
+        print(f"Current CUDA device: {torch.cuda.current_device()}")
+    except:
+        print("No CUDA device currently selected")
+
+def demo_detector(dataset_path='Training Dataset/final_dataset.csv'):
+    print("\n--- XSS Detection Model Demonstration ---")
     
-    # Train model
-    detector.train(
-        texts=texts,
-        labels=labels,
-        epochs=20,
-        batch_size=32,
-        learning_rates=[0.001, 0.002, 0.01, 0.02, 0.05]
-    )
-
-    # Plot training and validation losses
-    import matplotlib.pyplot as plt
-
-    plt.figure(figsize=(10, 6))
-    plt.plot(range(1, len(detector.training_losses) + 1), detector.training_losses, label='Training Loss')
-    plt.plot(range(1, len(detector.validation_losses) + 1), detector.validation_losses, label='Validation Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('Training and Validation Loss Over Time')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-    # Test with some example cases
-    test_cases = [
-        "<script>alert(1)</script>",
-        "<img src='x' onerror='alert(1)'>",
-        "<a href='/wiki/Portal:Philosophy'>Philosophy portal</a>",
-        "<span class='reference-text'>Normal text</span>"
-    ]
+    try:
+        # Load and clean data
+        texts, labels = load_and_clean_data(dataset_path)
+        
+        # Initialize and train detector
+        detector = XSSDetector(max_len=100)
+        detector.train(
+            texts=texts,
+            labels=labels,
+            epochs=20,
+            batch_size=16,
+            learning_rates=[0.001, 0.002, 0.01, 0.02, 0.05]
+        )
     
-    print("\nTesting some examples:")
-    for test_input in test_cases:
-        risk_score = detector.predict(test_input)
-        print(f"Risk score for '{test_input}': {risk_score:.3f}")
-# Run demonstration
+    except Exception as e:
+        print(f"Demonstration failed: {e}")
+        print("Possible issues:")
+        print("1. Ensure correct dataset path")
+        print("2. Check dataset format")
+        print("3. Verify required libraries are installed")
+
+
 if __name__ == "__main__":
+    check_environment()
     demo_detector()
 ```
 ![image](https://github.com/user-attachments/assets/a8e32a1e-a35a-4b54-bc51-4db8164ca597)
