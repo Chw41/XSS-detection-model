@@ -724,7 +724,195 @@ vi MLP.ipynb
 ```
 [MLP.ipynb](https://github.com/Chw41/XSS-dection-model/blob/main/MLP.ipynb)
 ```python=
+import os
+import numpy as np
+import pandas as pd
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader, random_split
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
+import matplotlib.pyplot as plt
+from sklearn.feature_extraction.text import TfidfVectorizer
 
+class XSSDataset(Dataset):
+    def __init__(self, features, labels):
+        self.features = torch.FloatTensor(features)
+        self.labels = torch.LongTensor(labels)
+    
+    def __len__(self):
+        return len(self.labels)
+    
+    def __getitem__(self, idx):
+        return self.features[idx], self.labels[idx]
+
+class MLPModel(nn.Module):
+    def __init__(self, input_dim):
+        super(MLPModel, self).__init__()
+        self.layers = nn.Sequential(
+            nn.Linear(input_dim, 64),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(32, 2)
+        )
+    
+    def forward(self, x):
+        return self.layers(x)
+
+def train_and_evaluate(model, train_loader, val_loader, optimizer, criterion, epochs):
+    train_losses, val_losses = [], []
+    
+    for epoch in range(epochs):
+        model.train()
+        train_epoch_loss = 0
+        for features, labels in train_loader:
+            optimizer.zero_grad()
+            outputs = model(features)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            train_epoch_loss += loss.item()
+        
+        train_epoch_loss /= len(train_loader)
+        train_losses.append(train_epoch_loss)
+        
+        model.eval()
+        val_epoch_loss = 0
+        with torch.no_grad():
+            for features, labels in val_loader:
+                outputs = model(features)
+                loss = criterion(outputs, labels)
+                val_epoch_loss += loss.item()
+            
+            val_epoch_loss /= len(val_loader)
+            val_losses.append(val_epoch_loss)
+        
+        print(f'Epoch {epoch+1}/{epochs}: Train Loss = {train_epoch_loss:.4f}, Val Loss = {val_epoch_loss:.4f}')
+    
+    return train_losses, val_losses
+
+def evaluate_metrics(model, test_loader):
+    model.eval()
+    all_preds, all_labels = [], []
+    
+    with torch.no_grad():
+        for features, labels in test_loader:
+            outputs = model(features)
+            _, preds = torch.max(outputs, 1)
+            all_preds.extend(preds.numpy())
+            all_labels.extend(labels.numpy())
+    
+    f1 = f1_score(all_labels, all_preds, average='weighted')
+    accuracy = accuracy_score(all_labels, all_preds)
+    precision = precision_score(all_labels, all_preds, average='weighted')
+    recall = recall_score(all_labels, all_preds, average='weighted')
+    
+    return {
+        'F1 Score': f1,
+        'Accuracy': accuracy,
+        'Precision': precision,
+        'Recall': recall
+    }
+
+def main():
+    # Load dataset
+    dataset_path = '/Training Dataset/final_dataset.csv'
+    
+    # Read CSV and handle NaN values
+    df = pd.read_csv(dataset_path)
+    
+    # Remove rows with NaN values in 'Sentence' or 'Label' columns
+    df = df.dropna(subset=['Sentence', 'Label'])
+    
+    # Convert 'Sentence' to string type and replace any remaining NaNs
+    df['Sentence'] = df['Sentence'].astype(str).fillna('')
+    
+    # Print dataset info
+    print("Dataset shape after cleaning:", df.shape)
+    print("\nSample of cleaned dataset:")
+    print(df.head())
+    
+    # Text Vectorization
+    vectorizer = TfidfVectorizer(max_features=1000)
+    X = vectorizer.fit_transform(df['Sentence']).toarray()
+    y = df['Label'].values
+    
+    # Split data
+    X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=42)
+    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.33, random_state=42)
+    
+    # Create data loaders
+    train_dataset = XSSDataset(X_train, y_train)
+    val_dataset = XSSDataset(X_val, y_val)
+    test_dataset = XSSDataset(X_test, y_test)
+    
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=32)
+    test_loader = DataLoader(test_dataset, batch_size=32)
+    
+    # Print first 3 samples
+    print("\nFirst 3 Training Samples:")
+    for i, (features, label) in enumerate(train_loader):
+        if i < 1:
+            print("Features shape:", features[:3].shape)
+            print("Labels:", label[:3])
+        break
+    
+    # Learning rates to experiment
+    learning_rates = [0.001, 0.002, 0.01, 0.02, 0.05]
+    epochs = 20
+    results = {}
+    
+    # Create a figure with 5 subplots, one for each learning rate
+    plt.figure(figsize=(20, 15))
+    
+    for lr in learning_rates:
+        print(f"\n--- Learning Rate: {lr} ---")
+        
+        # Reset model and optimizer for each learning rate
+        model = MLPModel(X_train.shape[1])
+        optimizer = optim.Adam(model.parameters(), lr=lr)
+        criterion = nn.CrossEntropyLoss()
+        
+        train_losses, val_losses = train_and_evaluate(
+            model, train_loader, val_loader, optimizer, criterion, epochs
+        )
+        
+        # Plot losses for this learning rate in a separate subplot
+        plt.subplot(2, 3, learning_rates.index(lr) + 1)
+        plt.plot(range(1, epochs + 1), train_losses, label='Train Loss', marker='o')
+        plt.plot(range(1, epochs + 1), val_losses, label='Validation Loss', marker='o')
+        plt.title(f'Loss Curves - Learning Rate: {lr}')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.grid(True)
+        plt.xticks(range(1, epochs + 1))
+        
+        # Evaluate metrics
+        metrics = evaluate_metrics(model, test_loader)
+        results[lr] = metrics
+        
+        print("Metrics:", metrics)
+    
+    plt.tight_layout()
+    plt.savefig('learning_rate_losses.png')
+    plt.close()
+    
+    # Print comprehensive results
+    print("\n--- Comprehensive Results ---")
+    for lr, metrics in results.items():
+        print(f"\nLearning Rate: {lr}")
+        for metric, value in metrics.items():
+            print(f"{metric}: {value}")
+
+if __name__ == "__main__":
+    main()
 ```
 
 Ref: https://github.com/antonmedv/fx](https://github.com/obarrera/ML-XSS-Detection/blob/main/XSS-Doc2Vec-ML-Classifier.ipynb
